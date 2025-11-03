@@ -1,0 +1,119 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import Navbar from './components/common/Navbar';
+import Footer from './components/common/Footer';
+import ProtectedRoute from './components/common/ProtectedRoute';
+
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import RecipeDetails from './pages/RecipeDetails';
+import CreateRecipe from './pages/CreateRecipe';
+import EditRecipe from './pages/EditRecipe';
+import MyRecipes from './pages/MyRecipes';
+import Favorites from './pages/Favorites';
+import MealPlans from './pages/MealPlans';
+import ShoppingLists from './pages/ShoppingLists';
+import Profile from './pages/Profile';
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <div className="min-h-screen flex flex-col bg-gray-50">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/recipes/:id" element={<RecipeDetails />} />
+              
+              <Route
+                path="/create-recipe"
+                element={
+                  <ProtectedRoute>
+                    <CreateRecipe />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/recipes/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <EditRecipe />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/my-recipes"
+                element={
+                  <ProtectedRoute>
+                    <MyRecipes />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/favorites"
+                element={
+                  <ProtectedRoute>
+                    <Favorites />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/meal-plans"
+                element={
+                  <ProtectedRoute>
+                    <MealPlans />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/shopping-lists"
+                element={
+                  <ProtectedRoute>
+                    <ShoppingLists />
+                  </ProtectedRoute>
+                }
+              />
+              
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </main>
+          <Footer />
+          <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+        </div>
+      </AuthProvider>
+    </Router>
+  );
+}
+
+export default App;
