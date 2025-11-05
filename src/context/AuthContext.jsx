@@ -30,14 +30,24 @@ export const AuthProvider = ({ children }) => {
       const data = await authApi.login(credentials);
       // Backend returns { token, user } in the response
       const token = data.token;
-      const user = data.user || data;
       
       if (!token) {
         throw new Error('No token received from server');
       }
       
       localStorage.setItem('token', token);
-      setUser(user);
+      
+      // Fetch complete user data after successful login
+      try {
+        const userData = await authApi.getCurrentUser();
+        setUser(userData);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Set basic user data as fallback
+        const user = data.user || data;
+        setUser(user);
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
@@ -52,14 +62,24 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await authApi.register(userData);
       const token = data.token;
-      const user = data.user || data;
       
       if (!token) {
         throw new Error('No token received from server');
       }
       
       localStorage.setItem('token', token);
-      setUser(user);
+      
+      // Fetch complete user data after successful registration
+      try {
+        const completeUserData = await authApi.getCurrentUser();
+        setUser(completeUserData);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Set basic user data as fallback
+        const user = data.user || data;
+        setUser(user);
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Registration error:', error);
@@ -74,6 +94,16 @@ export const AuthProvider = ({ children }) => {
     try {
       const updatedUser = await authApi.updateProfile(profileData);
       setUser(updatedUser);
+      
+      // Fetch complete user data to ensure everything is in sync
+      try {
+        const completeUserData = await authApi.getCurrentUser();
+        setUser(completeUserData);
+      } catch (error) {
+        console.error('Error refreshing user data:', error);
+        // Keep the updatedUser if refresh fails
+      }
+      
       return { success: true };
     } catch (error) {
       console.error('Profile update error:', error);

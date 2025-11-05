@@ -10,16 +10,23 @@ const Profile = () => {
   const [imagePreview, setImagePreview] = useState(user?.imageUrl || null);
   const fileInputRef = useRef(null);
   
+  // Helper function to convert comma-separated string to array
+  const stringToArray = (str) => {
+    if (!str) return [];
+    if (Array.isArray(str)) return str;
+    return str.split(',').map(item => item.trim()).filter(item => item);
+  };
+  
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     email: user?.email || '',
     username: user?.username || '',
     preferences: {
-      dietaryRestrictions: user?.preferences?.dietaryRestrictions || [],
-      cuisinePreferences: user?.preferences?.cuisinePreferences || [],
+      dietaryRestrictions: user?.dietaryRestrictionNames || [],
+      cuisinePreferences: stringToArray(user?.preferences?.cuisinePreferences),
       difficultyLevel: user?.preferences?.difficultyLevel || 'medium',
-      mealTypes: user?.preferences?.mealTypes || []
+      mealTypes: stringToArray(user?.preferences?.mealTypes)
     }
   });
 
@@ -42,12 +49,13 @@ const Profile = () => {
       email: user?.email || '',
       username: user?.username || '',
       preferences: {
-        dietaryRestrictions: user?.preferences?.dietaryRestrictions || [],
-        cuisinePreferences: user?.preferences?.cuisinePreferences || [],
+        dietaryRestrictions: user?.dietaryRestrictionNames || [],
+        cuisinePreferences: stringToArray(user?.preferences?.cuisinePreferences),
         difficultyLevel: user?.preferences?.difficultyLevel || 'medium',
-        mealTypes: user?.preferences?.mealTypes || []
+        mealTypes: stringToArray(user?.preferences?.mealTypes)
       }
     });
+    setImagePreview(user?.imageUrl || null);
   }, [user]);
 
   const handleInputChange = (e) => {
@@ -102,9 +110,13 @@ const Profile = () => {
     try {
       setLoading(true);
       
-      // Here you would typically make an API call to update the profile
-      // For now, we'll just update the local state
-      await updateProfile(formData);
+      // Include the image URL in the form data
+      const dataToSave = {
+        ...formData,
+        imageUrl: imagePreview || formData.imageUrl || ''
+      };
+      
+      await updateProfile(dataToSave);
       
       setIsEditing(false);
       toast.success('Profile updated successfully!');
@@ -122,10 +134,10 @@ const Profile = () => {
       email: user?.email || '',
       username: user?.username || '',
       preferences: {
-        dietaryRestrictions: user?.preferences?.dietaryRestrictions || [],
-        cuisinePreferences: user?.preferences?.cuisinePreferences || [],
+        dietaryRestrictions: user?.dietaryRestrictionNames || [],
+        cuisinePreferences: stringToArray(user?.preferences?.cuisinePreferences),
         difficultyLevel: user?.preferences?.difficultyLevel || 'medium',
-        mealTypes: user?.preferences?.mealTypes || []
+        mealTypes: stringToArray(user?.preferences?.mealTypes)
       }
     });
     setImagePreview(user?.imageUrl || null);
@@ -282,8 +294,8 @@ const Profile = () => {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {(user?.preferences?.dietaryRestrictions || []).length > 0 ? (
-                      user.preferences.dietaryRestrictions.map(restriction => (
+                    {(formData?.preferences?.dietaryRestrictions || []).length > 0 ? (
+                      formData.preferences.dietaryRestrictions.map(restriction => (
                         <span key={restriction} className="px-3 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full text-sm">
                           {restriction}
                         </span>
@@ -319,8 +331,8 @@ const Profile = () => {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {(user?.preferences?.cuisinePreferences || []).length > 0 ? (
-                      user.preferences.cuisinePreferences.map(cuisine => (
+                    {(formData?.preferences?.cuisinePreferences || []).length > 0 ? (
+                      formData.preferences.cuisinePreferences.map(cuisine => (
                         <span key={cuisine} className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
                           {cuisine}
                         </span>
@@ -356,8 +368,8 @@ const Profile = () => {
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {(user?.preferences?.mealTypes || []).length > 0 ? (
-                      user.preferences.mealTypes.map(mealType => (
+                    {(formData?.preferences?.mealTypes || []).length > 0 ? (
+                      formData.preferences.mealTypes.map(mealType => (
                         <span key={mealType} className="px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm">
                           {mealType}
                         </span>
