@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FaStar, FaClock, FaFire, FaHeart, FaRegHeart } from 'react-icons/fa';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { favoriteApi } from '../../api/favoriteApi';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -10,6 +10,27 @@ const RecipeCard = ({ recipe, onFavoriteChange }) => {
   const { isAuthenticated } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [checkingFavorite, setCheckingFavorite] = useState(false);
+
+  // Check if recipe is favorite when component mounts
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (isAuthenticated && recipe.id) {
+        setCheckingFavorite(true);
+        try {
+          const result = await favoriteApi.isFavorite(recipe.id);
+          setIsFavorite(result.isFavorite || result === true);
+        } catch (error) {
+          // If error checking favorite status, assume it's not a favorite
+          setIsFavorite(false);
+        } finally {
+          setCheckingFavorite(false);
+        }
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [isAuthenticated, recipe.id]);
 
   const handleFavoriteToggle = async (e) => {
     e.preventDefault();
@@ -31,7 +52,16 @@ const RecipeCard = ({ recipe, onFavoriteChange }) => {
       }
       if (onFavoriteChange) onFavoriteChange();
     } catch (error) {
-      toast.error('Failed to update favorite');
+      // Handle duplicate error gracefully
+      if (error.response?.data?.message?.includes('already in favorites')) {
+        setIsFavorite(true);
+        toast.info('Recipe is already in your favorites');
+      } else if (error.response?.data?.message?.includes('not found')) {
+        setIsFavorite(false);
+        toast.info('Recipe was not in favorites');
+      } else {
+        toast.error('Failed to update favorite');
+      }
     } finally {
       setLoading(false);
     }
@@ -48,10 +78,12 @@ const RecipeCard = ({ recipe, onFavoriteChange }) => {
           />
           <button
             onClick={handleFavoriteToggle}
-            disabled={loading}
-            className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors"
+            disabled={loading || checkingFavorite}
+            className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors disabled:opacity-50"
           >
-            {isFavorite ? (
+            {checkingFavorite ? (
+              <FaRegHeart className="text-gray-400 text-xl animate-pulse" />
+            ) : isFavorite ? (
               <FaHeart className="text-red-500 text-xl" />
             ) : (
               <FaRegHeart className="text-gray-600 text-xl" />

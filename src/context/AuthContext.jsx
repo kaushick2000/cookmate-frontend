@@ -70,6 +70,20 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateProfile = async (profileData) => {
+    try {
+      const updatedUser = await authApi.updateProfile(profileData);
+      setUser(updatedUser);
+      return { success: true };
+    } catch (error) {
+      console.error('Profile update error:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Profile update failed',
+      };
+    }
+  };
+
   const logout = async () => {
     try {
       await authApi.logout();
@@ -86,6 +100,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    updateProfile,
     logout,
     isAuthenticated: !!user,
   };

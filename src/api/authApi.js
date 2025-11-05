@@ -33,4 +33,18 @@ export const authApi = {
     });
     return response.data;
   },
+
+  verifyCode: async (email, verificationCode, newPassword) => {
+    const response = await axiosInstance.post('/auth/verify-code', {
+      email,
+      verificationCode,
+      newPassword,
+    });
+    return response.data;
+  },
+
+  updateProfile: async (profileData) => {
+    const response = await axiosInstance.put('/auth/profile', profileData);
+    return response.data;
+  },
 };

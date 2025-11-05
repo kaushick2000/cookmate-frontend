@@ -83,10 +83,10 @@ const Home = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
           Discover Amazing Recipes
         </h1>
-        <p className="text-xl text-gray-600 mb-8">
+        <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
           Find, cook, and share your favorite meals
         </p>
 
@@ -98,7 +98,7 @@ const Home = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search for recipes..."
-              className="w-full px-6 py-4 text-lg border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full px-6 py-4 text-lg border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400"
             />
             <button
               type="submit"

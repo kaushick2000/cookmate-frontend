@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -11,6 +12,8 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import OAuth2RedirectHandler from './components/auth/OAuth2RedirectHandler';
 import RecipeDetails from './pages/RecipeDetails';
 import CreateRecipe from './pages/CreateRecipe';
 import EditRecipe from './pages/EditRecipe';
@@ -23,15 +26,18 @@ import Profile from './pages/Profile';
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <div className="min-h-screen flex flex-col bg-gray-50">
-          <Navbar />
-          <main className="flex-grow">
+      <ThemeProvider>
+        <AuthProvider>
+          <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+            <Navbar />
+            <main className="flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
               <Route path="/recipes/:id" element={<RecipeDetails />} />
               
               <Route
@@ -112,6 +118,7 @@ function App() {
           />
         </div>
       </AuthProvider>
+    </ThemeProvider>
     </Router>
   );
 }
