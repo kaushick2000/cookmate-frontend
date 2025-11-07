@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { recipeApi } from '../../api/recipeApi';
 import { toast } from 'react-toastify';
 import { CUISINE_TYPES, MEAL_TYPES, DIFFICULTY_LEVELS } from '../../utils/constants';
-import { FaPlus, FaTrash } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaUpload } from 'react-icons/fa';
 
 const RecipeForm = ({ recipe, isEdit = false }) => {
   const navigate = useNavigate();
@@ -80,6 +80,47 @@ const RecipeForm = ({ recipe, isEdit = false }) => {
     setFormData({ ...formData, instructions: newInstructions });
   };
 
+  const fileInputRef = useRef();
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const handleImageSelect = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        toast.error('Please upload a JPEG or PNG image');
+        return;
+      }
+
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload image immediately
+      try {
+        setLoading(true);
+        const response = await recipeApi.uploadImage(file);
+        if (response.imageUrl) {
+          setFormData({ ...formData, imageUrl: response.imageUrl });
+          toast.success('Image uploaded successfully!');
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        toast.error(error.response?.data?.error || 'Failed to upload image');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -100,6 +141,10 @@ const RecipeForm = ({ recipe, isEdit = false }) => {
         ingredients: cleanedIngredients,
         instructions: cleanedInstructions,
       };
+
+      if (selectedImage) {
+        recipeData.imageFile = selectedImage;
+      }
 
       if (isEdit) {
         await recipeApi.updateRecipe(recipe.id, recipeData);
@@ -252,15 +297,54 @@ const RecipeForm = ({ recipe, isEdit = false }) => {
 
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Image URL
+              Recipe Image
             </label>
-            <input
-              type="url"
-              name="imageUrl"
-              value={formData.imageUrl}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
+            <div className="mt-1 flex flex-col space-y-4">
+              {(imagePreview || formData.imageUrl) && (
+                <div className="relative w-64 h-64">
+                  <img
+                    src={imagePreview || formData.imageUrl}
+                    alt="Recipe preview"
+                    className="object-cover w-full h-full rounded-lg"
+                  />
+                </div>
+              )}
+              <div className="flex items-center space-x-4">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                >
+                  <FaUpload className="mr-2" />
+                  Upload Image
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+                <span className="text-sm text-gray-500">
+                  JPEG or PNG, max 5MB
+                </span>
+              </div>
+              {!selectedImage && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Or use an image URL
+                  </label>
+                  <input
+                    type="url"
+                    name="imageUrl"
+                    value={formData.imageUrl}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

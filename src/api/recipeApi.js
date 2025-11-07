@@ -14,12 +14,38 @@ export const recipeApi = {
   },
 
   createRecipe: async (recipeData) => {
-    const response = await axiosInstance.post('/recipes', recipeData);
+    const formData = new FormData();
+    
+    if (recipeData.imageFile) {
+      formData.append('image', recipeData.imageFile);
+      delete recipeData.imageFile;
+    }
+    
+    formData.append('recipe', new Blob([JSON.stringify(recipeData)], { type: 'application/json' }));
+    
+    const response = await axiosInstance.post('/recipes', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
   updateRecipe: async (id, recipeData) => {
-    const response = await axiosInstance.put(`/recipes/${id}`, recipeData);
+    const formData = new FormData();
+    
+    if (recipeData.imageFile) {
+      formData.append('image', recipeData.imageFile);
+      delete recipeData.imageFile;
+    }
+    
+    formData.append('recipe', new Blob([JSON.stringify(recipeData)], { type: 'application/json' }));
+    
+    const response = await axiosInstance.put(`/recipes/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 
@@ -109,6 +135,18 @@ export const recipeApi = {
   getIngredientSubstitutions: async (ingredientName, useAI = false) => {
     const response = await axiosInstance.get('/recipes/substitutions', {
       params: { ingredient: ingredientName, useAI },
+    });
+    return response.data;
+  },
+
+  uploadImage: async (imageFile) => {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    
+    const response = await axiosInstance.post('/recipes/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
     return response.data;
   },
