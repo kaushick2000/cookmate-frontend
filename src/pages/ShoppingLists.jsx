@@ -17,7 +17,15 @@ const ShoppingLists = () => {
     try {
       const response = await shoppingListApi.getUserShoppingLists(0, 20);
       setShoppingLists(response.content);
-      if (response.content.length > 0 && !selectedList) {
+      // If we have a selected list, try to keep it selected after refresh
+      if (selectedList) {
+        const updatedList = response.content.find(list => list.id === selectedList.id);
+        if (updatedList) {
+          setSelectedList(updatedList);
+        } else if (response.content.length > 0) {
+          setSelectedList(response.content[0]);
+        }
+      } else if (response.content.length > 0) {
         setSelectedList(response.content[0]);
       }
     } catch (error) {
@@ -59,6 +67,29 @@ const ShoppingLists = () => {
     }
   };
 
+  const handleGenerateFromMealPlans = async () => {
+    setLoading(true);
+    try {
+      const listId = selectedList ? selectedList.id : null;
+      const generatedList = await shoppingListApi.generateFromMealPlans(listId);
+      toast.success('Shopping list generated from meal plans!');
+      // Refresh the shopping lists to get updated item counts
+      const response = await shoppingListApi.getUserShoppingLists(0, 20);
+      setShoppingLists(response.content);
+      // Select the generated list - find it in the refreshed list
+      if (generatedList) {
+        const refreshedList = response.content.find(list => list.id === generatedList.id) || generatedList;
+        setSelectedList(refreshedList);
+      } else if (response.content.length > 0) {
+        setSelectedList(response.content[0]);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to generate shopping list from meal plans');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return <Loader />;
   }
@@ -67,12 +98,21 @@ const ShoppingLists = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Shopping Lists</h1>
-        <button
-          onClick={() => toast.info('Shopping list creation coming soon!')}
-          className="flex items-center bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
-        >
-          <FaPlus className="mr-2" /> Create List
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleGenerateFromMealPlans}
+            disabled={loading}
+            className="flex items-center bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 disabled:bg-gray-400"
+          >
+            <FaPlus className="mr-2" /> Generate from Meal Plans
+          </button>
+          <button
+            onClick={() => toast.info('Shopping list creation coming soon!')}
+            className="flex items-center bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
+          >
+            <FaPlus className="mr-2" /> Create List
+          </button>
+        </div>
       </div>
 
       {shoppingLists.length === 0 ? (

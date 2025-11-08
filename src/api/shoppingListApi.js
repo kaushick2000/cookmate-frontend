@@ -42,4 +42,12 @@ export const shoppingListApi = {
     const response = await axiosInstance.delete(`/shopping-lists/items/${itemId}`);
     return response.data;
   },
+
+  generateFromMealPlans: async (listId = null) => {
+    const params = listId ? { listId } : {};
+    const response = await axiosInstance.post('/shopping-lists/generate-from-meal-plans', null, {
+      params,
+    });
+    return response.data;
+  },
 };
