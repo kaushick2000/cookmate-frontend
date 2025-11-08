@@ -37,9 +37,23 @@ const RecipeRecommendations = ({ recipeId, type = 'personalized' }) => {
       // If response is an array, use it directly; otherwise extract content
       const recipes = Array.isArray(response) ? response : (response.content || response || []);
       setRecommendations(recipes);
+      
+      // Debug logging for history
+      if (recType === 'history' && recipes.length === 0) {
+        console.log('No recipes found in viewing history. View some recipes first to see them here!');
+      }
+      
     } catch (error) {
       console.error('Error fetching recommendations:', error);
-      toast.error('Failed to load recommendations');
+      
+      // Better error handling for history
+      if (recType === 'history' && error.response?.status === 401) {
+        toast.error('Please log in to see your viewing history');
+      } else if (recType === 'history') {
+        toast.info('No viewing history found. Click on some recipes to see them here!');
+      } else {
+        toast.error('Failed to load recommendations');
+      }
       setRecommendations([]);
     } finally {
       setLoading(false);
@@ -103,7 +117,19 @@ const RecipeRecommendations = ({ recipeId, type = 'personalized' }) => {
 
       {!loading && recommendations.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          No recommendations available at the moment.
+          {selectedType === 'history' ? (
+            <div>
+              <p className="mb-2">📖 No viewing history found</p>
+              <p className="text-sm">Click on some recipes first to see them in your history!</p>
+            </div>
+          ) : selectedType === 'preferences' ? (
+            <div>
+              <p className="mb-2">⚙️ No preferences set</p>
+              <p className="text-sm">Go to your profile to set dietary preferences!</p>
+            </div>
+          ) : (
+            'No recommendations available at the moment.'
+          )}
         </div>
       )}
     </div>
