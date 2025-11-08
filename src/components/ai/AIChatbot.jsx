@@ -196,6 +196,220 @@ const AIChatbot = () => {
     </div>
   );
 
+  const renderMessageContent = (content) => {
+    // Split content into lines for processing
+    const lines = content.split('\n');
+    const elements = [];
+    let currentSection = [];
+    let inList = false;
+    let listItems = [];
+
+    lines.forEach((line, index) => {
+      // Handle headings (lines starting with ###, ##, #)
+      if (line.startsWith('###')) {
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        elements.push(
+          <h3 key={`h3-${index}`} className="text-lg font-bold text-orange-600 dark:text-orange-400 mb-3 mt-6 flex items-center">
+            <FaUtensils className="mr-2" />
+            {line.replace(/^###\s*/, '').replace(/🍲|🛒|👩‍🍳|🥗|✨/g, '').trim()}
+          </h3>
+        );
+      } else if (line.startsWith('##')) {
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        elements.push(
+          <h2 key={`h2-${index}`} className="text-xl font-bold text-orange-700 dark:text-orange-300 mb-4 mt-8 border-b border-orange-200 dark:border-orange-700 pb-2">
+            {line.replace(/^##\s*/, '').replace(/🍲|🛒|👩‍🍳|🥗|✨/g, '').trim()}
+          </h2>
+        );
+      } else if (line.startsWith('#')) {
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        elements.push(
+          <h1 key={`h1-${index}`} className="text-2xl font-bold text-orange-800 dark:text-orange-200 mb-4 mt-8">
+            {line.replace(/^#\s*/, '').replace(/🍲|🛒|👩‍🍳|🥗|✨/g, '').trim()}
+          </h1>
+        );
+      }
+      // Handle emoji-based section headers (🍽️ Yield & Prep Time, etc.)
+      else if (/^(🍽️|🛒|👩‍🍳|🥗|✨|🔥|💡|⏱️|🍲)/.test(line)) {
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        
+        if (inList && listItems.length > 0) {
+          elements.push(<ul key={`ul-${index}`} className="mb-4 space-y-2">{listItems}</ul>);
+          listItems = [];
+          inList = false;
+        }
+        
+        const emojiMatch = line.match(/^(🍽️|🛒|👩‍🍳|🥗|✨|🔥|💡|⏱️|🍲)/);
+        const emoji = emojiMatch ? emojiMatch[0] : '';
+        const text = line.replace(/^(🍽️|🛒|👩‍🍳|🥗|✨|🔥|💡|⏱️|🍲)\s*/, '').trim();
+        
+        elements.push(
+          <h4 key={`h4-${index}`} className="text-lg font-semibold text-orange-600 dark:text-orange-400 mb-3 mt-6 flex items-center bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border-l-4 border-orange-400">
+            <span className="mr-2">{emoji}</span>
+            <span>{text}</span>
+          </h4>
+        );
+      }
+      // Handle list items (lines starting with *, -, →, or •)
+      else if (line.trim().startsWith('*') || line.trim().startsWith('-') || line.trim().startsWith('→') || line.trim().startsWith('•') || line.includes('**') && line.includes(':**')) {
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        
+        if (!inList) {
+          inList = true;
+          listItems = [];
+        }
+        
+        let listItem = line.replace(/^\s*[*-→•]\s*/, '').trim();
+        
+        // Choose bullet style based on the original marker
+        let bulletIcon = '•';
+        if (line.trim().startsWith('→')) {
+          bulletIcon = '→';
+        }
+        
+        // Handle bold patterns in list items
+        if (listItem.includes('**')) {
+          const processedText = listItem.split('**').map((part, i) => 
+            i % 2 === 0 ? part : <strong key={`bold-${i}`} className="font-semibold text-orange-700 dark:text-orange-300">{part}</strong>
+          );
+          
+          listItems.push(
+            <li key={`li-${index}`} className="mb-3 flex items-start">
+              <span className="text-orange-500 mr-3 mt-1.5 text-lg">{bulletIcon}</span>
+              <div className="flex-1">{processedText}</div>
+            </li>
+          );
+        } else {
+          listItems.push(
+            <li key={`li-${index}`} className="mb-3 flex items-start">
+              <span className="text-orange-500 mr-3 mt-1.5 text-lg">{bulletIcon}</span>
+              <span className="flex-1">{listItem}</span>
+            </li>
+          );
+        }
+      }
+      // Handle numbered lists
+      else if (line.trim().match(/^\d+\./)) {
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        
+        if (!inList) {
+          inList = true;
+          listItems = [];
+        }
+        
+        const listItem = line.replace(/^\s*\d+\.\s*/, '').trim();
+        const stepNumber = line.match(/^\s*(\d+)\./)[1];
+        listItems.push(
+          <li key={`li-${index}`} className="mb-3 flex items-start">
+            <span className="bg-orange-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">
+              {stepNumber}
+            </span>
+            <span>{listItem}</span>
+          </li>
+        );
+      }
+      // Handle bold text patterns (**text**)
+      else if (line.includes('**')) {
+        if (inList && listItems.length > 0) {
+          elements.push(<ul key={`ul-${index}`} className="mb-4 space-y-2">{listItems}</ul>);
+          listItems = [];
+          inList = false;
+        }
+        
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+
+        // Process bold text
+        const processedText = line.split('**').map((part, i) => 
+          i % 2 === 0 ? part : <strong key={`bold-${i}`} className="font-bold text-orange-600 dark:text-orange-400">{part}</strong>
+        );
+        
+        elements.push(
+          <p key={`p-bold-${index}`} className="mb-3 font-medium">
+            {processedText}
+          </p>
+        );
+      }
+      // Handle emphasis lines (Yields:, Prep time:, etc.)
+      else if (line.includes('Yields:') || line.includes('Prep time:') || line.includes('Cook time:')) {
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        
+        elements.push(
+          <div key={`info-${index}`} className="bg-orange-50 dark:bg-orange-900/30 border-l-4 border-orange-400 p-3 mb-4">
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">{line}</p>
+          </div>
+        );
+      }
+      // Handle dividers (lines with ---)
+      else if (line.trim() === '---') {
+        if (inList && listItems.length > 0) {
+          elements.push(<ul key={`ul-${index}`} className="mb-4 space-y-2">{listItems}</ul>);
+          listItems = [];
+          inList = false;
+        }
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+        elements.push(<hr key={`hr-${index}`} className="my-6 border-gray-200 dark:border-gray-700" />);
+      }
+      // Handle empty lines
+      else if (line.trim() === '') {
+        if (inList && listItems.length > 0) {
+          elements.push(<ul key={`ul-${index}`} className="mb-4 space-y-2">{listItems}</ul>);
+          listItems = [];
+          inList = false;
+        }
+        if (currentSection.length > 0) {
+          elements.push(<p key={`p-${index}`} className="mb-4">{currentSection.join(' ')}</p>);
+          currentSection = [];
+        }
+      }
+      // Regular text lines
+      else {
+        if (inList && listItems.length > 0 && !line.trim().startsWith('*') && !line.trim().startsWith('-') && !line.trim().match(/^\d+\./)) {
+          elements.push(<ul key={`ul-${index}`} className="mb-4 space-y-2">{listItems}</ul>);
+          listItems = [];
+          inList = false;
+        }
+        currentSection.push(line);
+      }
+    });
+
+    // Handle any remaining content
+    if (inList && listItems.length > 0) {
+      elements.push(<ul key="ul-final" className="mb-4 space-y-1 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg border-l-4 border-orange-300">{listItems}</ul>);
+    }
+    if (currentSection.length > 0) {
+      elements.push(<p key="p-final" className="mb-4">{currentSection.join(' ')}</p>);
+    }
+
+    return <div className="space-y-2">{elements}</div>;
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 h-screen flex flex-col">
       {/* Header */}
@@ -258,7 +472,9 @@ const AIChatbot = () => {
                 </div>
               )}
               
-              <div className="whitespace-pre-wrap">{message.content}</div>
+              <div className="max-w-none">
+                {renderMessageContent(message.content)}
+              </div>
               
               {/* Recipe Suggestions */}
               {message.recipeSuggestions && message.recipeSuggestions.length > 0 && (
