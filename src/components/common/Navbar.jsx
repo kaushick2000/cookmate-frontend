@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { FaUser, FaHeart, FaCalendar, FaShoppingCart, FaSignOutAlt, FaMoon, FaSun } from 'react-icons/fa';
+import { FaUser, FaHeart, FaCalendar, FaShoppingCart, FaSignOutAlt, FaMoon, FaSun, FaRobot } from 'react-icons/fa';
 import { MdRestaurantMenu } from 'react-icons/md';
 
 const Navbar = () => {
@@ -31,6 +31,14 @@ const Navbar = () => {
               className="text-gray-700 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-md text-sm font-medium"
             >
               Recipes
+            </Link>
+            
+            <Link
+              to="/ai-chatbot"
+              className="text-gray-700 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+            >
+              <FaRobot className="mr-1" />
+              AI Assistant
             </Link>
             
             {/* Dark Mode Toggle */}

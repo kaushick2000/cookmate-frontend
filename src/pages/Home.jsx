@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { recipeApi } from '../api/recipeApi';
 import RecipeList from '../components/recipe/RecipeList';
 import RecipeFilters from '../components/recipe/RecipeFilters';
 import RecipeRecommendations from '../components/ai/RecipeRecommendations';
-import { FaSearch } from 'react-icons/fa';
+import { FaSearch, FaRobot } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const Home = () => {
@@ -89,6 +90,20 @@ const Home = () => {
         <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
           Find, cook, and share your favorite meals
         </p>
+
+        {/* AI Assistant Button */}
+        <div className="mb-8">
+          <Link 
+            to="/ai-chatbot"
+            className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-full shadow-lg hover:from-orange-600 hover:to-orange-700 transform hover:scale-105 transition-all duration-200"
+          >
+            <FaRobot className="mr-2 text-xl" />
+            Ask AI for Recipe Suggestions
+          </Link>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            Tell AI what ingredients you have and get instant recipe ideas!
+          </p>
+        </div>
 
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="max-w-2xl mx-auto">

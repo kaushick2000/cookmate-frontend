@@ -4,7 +4,7 @@ import { recipeApi } from '../api/recipeApi';
 import RecipeList from '../components/recipe/RecipeList';
 import Loader from '../components/common/Loader';
 import { toast } from 'react-toastify';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaRobot } from 'react-icons/fa';
 
 const MyRecipes = () => {
   const [recipes, setRecipes] = useState([]);
@@ -36,16 +36,25 @@ const MyRecipes = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Recipes</h1>
-        <Link
-          to="/create-recipe"
-          className="flex items-center bg-orange-500 text-white px-6 py-3 rounded-md hover:bg-orange-600 transition-colors"
-        >
-          <FaPlus className="mr-2" />
-          Create Recipe
-        </Link>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">My Recipes</h1>
+        <div className="flex space-x-4">
+          <Link
+            to="/ai-chatbot"
+            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-4 py-2 rounded-md hover:from-orange-600 hover:to-orange-700 transition-colors flex items-center"
+          >
+            <FaRobot className="mr-2" />
+            AI Recipe Ideas
+          </Link>
+          <Link
+            to="/create-recipe"
+            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center"
+          >
+            <FaPlus className="mr-2" />
+            Create Recipe
+          </Link>
+        </div>
       </div>
-      
+
       {recipes.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg shadow-md">
           <div className="mb-6">

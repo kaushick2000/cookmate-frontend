@@ -22,6 +22,7 @@ import Favorites from './pages/Favorites';
 import MealPlans from './pages/MealPlans';
 import ShoppingLists from './pages/ShoppingLists';
 import Profile from './pages/Profile';
+import AIChatbot from './pages/AIChatbot';
 
 function App() {
   return (
@@ -102,6 +103,8 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              
+              <Route path="/ai-chatbot" element={<AIChatbot />} />
             </Routes>
           </main>
           <Footer />
