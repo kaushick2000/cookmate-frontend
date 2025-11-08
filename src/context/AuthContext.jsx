@@ -125,6 +125,28 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <AuthContext.Provider value={{
+        user: null,
+        loading: true,
+        login,
+        register,
+        updateProfile,
+        logout,
+        isAuthenticated: false,
+      }}>
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600 dark:text-gray-400">Loading CookMate...</p>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
+  }
+
   const value = {
     user,
     loading,

@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -26,9 +27,10 @@ import AIChatbot from './pages/AIChatbot';
 
 function App() {
   return (
-    <Router>
-      <ThemeProvider>
-        <AuthProvider>
+    <ErrorBoundary>
+      <Router>
+        <ThemeProvider>
+          <AuthProvider>
           <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             <Navbar />
             <main className="flex-grow">
@@ -123,6 +125,7 @@ function App() {
       </AuthProvider>
     </ThemeProvider>
     </Router>
+    </ErrorBoundary>
   );
 }
 

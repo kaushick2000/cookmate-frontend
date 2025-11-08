@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { recipeApi } from '../api/recipeApi';
+import { useAuth } from '../context/AuthContext';
 import RecipeList from '../components/recipe/RecipeList';
 import RecipeFilters from '../components/recipe/RecipeFilters';
 import RecipeRecommendations from '../components/ai/RecipeRecommendations';
@@ -8,6 +9,7 @@ import { FaSearch, FaRobot } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
 const Home = () => {
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,11 +17,7 @@ const Home = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  useEffect(() => {
-    fetchRecipes();
-  }, [page, filters]);
-
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async () => {
     setLoading(true);
     try {
       let response;
@@ -56,7 +54,11 @@ const Home = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, page]);
+
+  useEffect(() => {
+    fetchRecipes();
+  }, [page, filters, fetchRecipes]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -92,7 +94,7 @@ const Home = () => {
         </p>
 
         {/* AI Assistant Button */}
-        <div className="mb-8">
+        <div className="flex justify-center items-center mb-8">
           <Link 
             to="/ai-chatbot"
             className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-full shadow-lg hover:from-orange-600 hover:to-orange-700 transform hover:scale-105 transition-all duration-200"
@@ -100,8 +102,14 @@ const Home = () => {
             <FaRobot className="mr-2 text-xl" />
             Ask AI for Recipe Suggestions
           </Link>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Tell AI what ingredients you have and get instant recipe ideas!
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            {user 
+              ? 'Use the recommendation buttons below to see personalized recipes based on your profile'
+              : 'Tell AI what ingredients you have and get instant recipe ideas!'
+            }
           </p>
         </div>
 
@@ -126,7 +134,7 @@ const Home = () => {
       </div>
 
       {/* Filters */}
-      <RecipeFilters onFilterChange={handleFilterChange} />
+      <RecipeFilters onFilterChange={handleFilterChange} currentFilters={filters} />
 
       {/* Recipe Grid */}
       <RecipeList recipes={recipes} loading={loading} />
