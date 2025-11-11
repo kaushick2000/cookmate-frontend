@@ -76,6 +76,12 @@ const Navbar = () => {
                 >
                   <FaShoppingCart className="mr-1" /> Shopping
                 </Link>
+                {/* <Link
+                  to="/ai-chatbot"
+                  className="text-gray-700 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-md text-sm font-medium flex items-center"
+                >
+                  <FaRobot className="mr-1" /> AI Assistant
+                </Link> */}
                 <Link
                   to="/profile"
                   className="text-gray-700 dark:text-gray-300 hover:text-orange-500 dark:hover:text-orange-400 px-3 py-2 rounded-md text-sm font-medium flex items-center"

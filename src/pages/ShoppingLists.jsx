@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { shoppingListApi } from '../api/shoppingListApi';
-import { recipeApi } from '../api/recipeApi';
 import { toast } from 'react-toastify';
 import { FaPlus, FaTrash, FaCheck } from 'react-icons/fa';
 import Loader from '../components/common/Loader';
@@ -9,52 +8,10 @@ const ShoppingLists = () => {
   const [shoppingLists, setShoppingLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedList, setSelectedList] = useState(null);
-  const [recipeTitleMap, setRecipeTitleMap] = useState({});
 
   useEffect(() => {
     fetchShoppingLists();
   }, []);
-
-  // When selectedList changes, try to resolve any recipe IDs to titles so we can group by recipe
-  useEffect(() => {
-    const fetchRecipeTitles = async () => {
-      if (!selectedList || !selectedList.items) {
-        setRecipeTitleMap({});
-        return;
-      }
-
-      const ids = new Set();
-
-      selectedList.items.forEach((item) => {
-        if (item.sourceRecipeId) ids.add(item.sourceRecipeId);
-        if (item.recipeId) ids.add(item.recipeId);
-        if (item.recipe && item.recipe.id) ids.add(item.recipe.id);
-        if (item.relatedRecipes && Array.isArray(item.relatedRecipes)) {
-          item.relatedRecipes.forEach((r) => { if (r && r.id) ids.add(r.id); });
-        }
-      });
-
-      if (ids.size === 0) {
-        setRecipeTitleMap({});
-        return;
-      }
-
-      const map = {};
-      await Promise.all(Array.from(ids).map(async (id) => {
-        try {
-          const r = await recipeApi.getRecipeById(id);
-          if (r && r.title) map[id] = r.title;
-        } catch (err) {
-          // ignore failures, leave title undefined
-          console.debug('Failed to fetch recipe title for id', id, err?.message || err);
-        }
-      }));
-
-      setRecipeTitleMap(map);
-    };
-
-    fetchRecipeTitles();
-  }, [selectedList]);
 
   const fetchShoppingLists = async () => {
     try {
@@ -77,6 +34,11 @@ const ShoppingLists = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchShoppingLists();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleToggleItem = async (itemId) => {
     try {
@@ -213,37 +175,21 @@ const ShoppingLists = () => {
 
                 {selectedList.items && selectedList.items.length > 0 ? (
                   <div className="space-y-6">
-                    {/* Group items by source recipe (sourceRecipeTitle, relatedRecipes.title, requiredBy) */}
+                    {/* Group items by source recipe title */}
                     {(() => {
                       const groups = {};
                       const ungrouped = [];
 
                       selectedList.items.forEach((item) => {
-                        // Choose a single primary group per item to avoid duplicates.
-                        // Priority: sourceRecipeTitle > relatedRecipes[0].title > requiredBy[0]
-                        let groupTitle = null;
+                        // Check if item has recipe information from backend
                         if (item.sourceRecipeTitle) {
-                          groupTitle = item.sourceRecipeTitle;
-                        } else if (item.relatedRecipes && Array.isArray(item.relatedRecipes) && item.relatedRecipes.length > 0) {
-                          const r = item.relatedRecipes[0];
-                          groupTitle = r.title || r.name || (r.id ? `Recipe ${r.id}` : null);
-                        } else if (item.requiredBy && Array.isArray(item.requiredBy) && item.requiredBy.length > 0) {
-                          groupTitle = item.requiredBy[0];
-                        }
-
-                        if (groupTitle) {
+                          // Group by the recipe title provided by backend
+                          const groupTitle = item.sourceRecipeTitle;
                           groups[groupTitle] = groups[groupTitle] || [];
                           groups[groupTitle].push(item);
                         } else {
-                          // Try to resolve by id using recipeTitleMap
-                          const id = item.sourceRecipeId || item.recipeId || (item.recipe && item.recipe.id) || (item.relatedRecipes && Array.isArray(item.relatedRecipes) && item.relatedRecipes[0] && item.relatedRecipes[0].id);
-                          if (id && recipeTitleMap[id]) {
-                            const title = recipeTitleMap[id];
-                            groups[title] = groups[title] || [];
-                            groups[title].push(item);
-                          } else {
-                            ungrouped.push(item);
-                          }
+                          // Items without recipe information go to ungrouped
+                          ungrouped.push(item);
                         }
                       });
 
