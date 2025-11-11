@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FaStar, FaClock, FaFire, FaHeart, FaRegHeart } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import { favoriteApi } from '../../api/favoriteApi';
+// shopping list actions moved to RecipeDetails
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
 import { getImageUrl } from '../../utils/imageUtils';
@@ -10,6 +11,7 @@ const RecipeCard = ({ recipe, onFavoriteChange }) => {
   const { isAuthenticated } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
   const [loading, setLoading] = useState(false);
+  
   const [checkingFavorite, setCheckingFavorite] = useState(false);
 
   // Check if recipe is favorite when component mounts
@@ -67,6 +69,8 @@ const RecipeCard = ({ recipe, onFavoriteChange }) => {
     }
   };
 
+  // Add-to-shopping-list moved into RecipeDetails for better context
+
   return (
     <Link to={`/recipes/${recipe.id}`}>
       <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300">
@@ -119,13 +123,13 @@ const RecipeCard = ({ recipe, onFavoriteChange }) => {
                 </div>
               )}
             </div>
-            {recipe.averageRating > 0 && (
+            {/* {recipe.averageRating > 0 && (
               <div className="flex items-center">
                 <FaStar className="text-yellow-400 mr-1" />
                 <span>{recipe.averageRating.toFixed(1)}</span>
                 <span className="text-gray-400 ml-1">({recipe.totalReviews})</span>
               </div>
-            )}
+            )} */}
           </div>
 
           {(recipe.isVegetarian || recipe.isVegan || recipe.isGlutenFree) && (

@@ -8,6 +8,7 @@ import ReviewForm from '../components/review/ReviewForm';
 import RecipeRecommendations from '../components/ai/RecipeRecommendations';
 import IngredientSubstitutions from '../components/ai/IngredientSubstitutions';
 import Loader from '../components/common/Loader';
+import { shoppingListApi } from '../api/shoppingListApi';
 import { toast } from 'react-toastify';
 import { FaClock, FaFire, FaUsers, FaStar, FaEdit, FaTrash } from 'react-icons/fa';
 import { getImageUrl } from '../utils/imageUtils';
@@ -20,6 +21,7 @@ const RecipeDetails = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTimer, setActiveTimer] = useState(null);
+  const [addingToList, setAddingToList] = useState(false);
 
   useEffect(() => {
     fetchRecipe();
@@ -128,12 +130,12 @@ const RecipeDetails = () => {
             <FaUsers className="mr-2 text-blue-500" />
             <span>{recipe.servings} servings</span>
           </div>
-          {recipe.averageRating > 0 && (
+          {/* {recipe.averageRating > 0 && (
             <div className="flex items-center">
               <FaStar className="mr-2 text-yellow-400" />
               <span>{recipe.averageRating.toFixed(1)} ({recipe.totalReviews} reviews)</span>
             </div>
-          )}
+          )} */}
         </div>
 
         {(recipe.isVegetarian || recipe.isVegan || recipe.isGlutenFree) && (
@@ -193,6 +195,55 @@ const RecipeDetails = () => {
                 </li>
               ))}
             </ul>
+
+                    <div className="mt-4">
+                      <button
+                        onClick={async () => {
+                          if (!isAuthenticated) {
+                            toast.error('Please login to add ingredients to a shopping list');
+                            return;
+                          }
+                          setAddingToList(true);
+                          try {
+                            // Use current recipe data (already loaded)
+                            const ingredients = recipe.ingredients || [];
+
+                            // Get user's shopping lists (choose first or create one)
+                            const listsPage = await shoppingListApi.getUserShoppingLists(0, 50);
+                            let targetList = listsPage.content && listsPage.content.length > 0 ? listsPage.content[0] : null;
+                            if (!targetList) {
+                              targetList = await shoppingListApi.createShoppingList({ name: 'My Shopping List', description: '' });
+                            }
+
+                            for (const ing of ingredients) {
+                              const itemData = {
+                                ingredientName: ing.ingredientName,
+                                quantity: ing.quantity || null,
+                                unit: ing.unit || null,
+                                sourceRecipeId: recipe.id,
+                                sourceRecipeTitle: recipe.title,
+                              };
+                              try {
+                                await shoppingListApi.addItemToList(targetList.id, itemData);
+                              } catch (err) {
+                                console.debug('Failed adding item', itemData, err?.response?.data || err.message || err);
+                              }
+                            }
+
+                            toast.success(`Added ${ingredients.length} ingredient(s) to "${targetList.name}"`);
+                          } catch (err) {
+                            console.error(err);
+                            toast.error('Failed to add ingredients to shopping list');
+                          } finally {
+                            setAddingToList(false);
+                          }
+                        }}
+                        disabled={addingToList}
+                        className="mt-3 inline-flex items-center px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
+                      >
+                        {addingToList ? 'Adding…' : 'Add Ingredients to Shopping List'}
+                      </button>
+                    </div>
 
             {/* Nutrition Info */}
             {recipe.calories && (

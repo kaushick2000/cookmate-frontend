@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { shoppingListApi } from '../api/shoppingListApi';
+import { recipeApi } from '../api/recipeApi';
 import { toast } from 'react-toastify';
 import { FaPlus, FaTrash, FaCheck } from 'react-icons/fa';
 import Loader from '../components/common/Loader';
@@ -8,10 +9,52 @@ const ShoppingLists = () => {
   const [shoppingLists, setShoppingLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedList, setSelectedList] = useState(null);
+  const [recipeTitleMap, setRecipeTitleMap] = useState({});
 
   useEffect(() => {
     fetchShoppingLists();
   }, []);
+
+  // When selectedList changes, try to resolve any recipe IDs to titles so we can group by recipe
+  useEffect(() => {
+    const fetchRecipeTitles = async () => {
+      if (!selectedList || !selectedList.items) {
+        setRecipeTitleMap({});
+        return;
+      }
+
+      const ids = new Set();
+
+      selectedList.items.forEach((item) => {
+        if (item.sourceRecipeId) ids.add(item.sourceRecipeId);
+        if (item.recipeId) ids.add(item.recipeId);
+        if (item.recipe && item.recipe.id) ids.add(item.recipe.id);
+        if (item.relatedRecipes && Array.isArray(item.relatedRecipes)) {
+          item.relatedRecipes.forEach((r) => { if (r && r.id) ids.add(r.id); });
+        }
+      });
+
+      if (ids.size === 0) {
+        setRecipeTitleMap({});
+        return;
+      }
+
+      const map = {};
+      await Promise.all(Array.from(ids).map(async (id) => {
+        try {
+          const r = await recipeApi.getRecipeById(id);
+          if (r && r.title) map[id] = r.title;
+        } catch (err) {
+          // ignore failures, leave title undefined
+          console.debug('Failed to fetch recipe title for id', id, err?.message || err);
+        }
+      }));
+
+      setRecipeTitleMap(map);
+    };
+
+    fetchRecipeTitles();
+  }, [selectedList]);
 
   const fetchShoppingLists = async () => {
     try {
@@ -169,40 +212,116 @@ const ShoppingLists = () => {
                 </div>
 
                 {selectedList.items && selectedList.items.length > 0 ? (
-                  <div className="space-y-2">
-                    {selectedList.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50"
-                      >
-                        <div className="flex items-center flex-1">
-                          <button
-                            onClick={() => handleToggleItem(item.id)}
-                            className={`mr-3 ${
-                              item.isPurchased
-                                ? 'text-green-500'
-                                : 'text-gray-400'
-                            }`}
-                          >
-                            <FaCheck size={20} />
-                          </button>
-                          <div className={item.isPurchased ? 'line-through text-gray-400' : ''}>
-                            <span className="font-medium">{item.ingredientName}</span>
-                            {item.quantity && (
-                              <span className="text-gray-600 ml-2">
-                                {item.quantity} {item.unit}
-                              </span>
-                            )}
-                          </div>
+                  <div className="space-y-6">
+                    {/* Group items by source recipe (sourceRecipeTitle, relatedRecipes.title, requiredBy) */}
+                    {(() => {
+                      const groups = {};
+                      const ungrouped = [];
+
+                      selectedList.items.forEach((item) => {
+                        // Choose a single primary group per item to avoid duplicates.
+                        // Priority: sourceRecipeTitle > relatedRecipes[0].title > requiredBy[0]
+                        let groupTitle = null;
+                        if (item.sourceRecipeTitle) {
+                          groupTitle = item.sourceRecipeTitle;
+                        } else if (item.relatedRecipes && Array.isArray(item.relatedRecipes) && item.relatedRecipes.length > 0) {
+                          const r = item.relatedRecipes[0];
+                          groupTitle = r.title || r.name || (r.id ? `Recipe ${r.id}` : null);
+                        } else if (item.requiredBy && Array.isArray(item.requiredBy) && item.requiredBy.length > 0) {
+                          groupTitle = item.requiredBy[0];
+                        }
+
+                        if (groupTitle) {
+                          groups[groupTitle] = groups[groupTitle] || [];
+                          groups[groupTitle].push(item);
+                        } else {
+                          // Try to resolve by id using recipeTitleMap
+                          const id = item.sourceRecipeId || item.recipeId || (item.recipe && item.recipe.id) || (item.relatedRecipes && Array.isArray(item.relatedRecipes) && item.relatedRecipes[0] && item.relatedRecipes[0].id);
+                          if (id && recipeTitleMap[id]) {
+                            const title = recipeTitleMap[id];
+                            groups[title] = groups[title] || [];
+                            groups[title].push(item);
+                          } else {
+                            ungrouped.push(item);
+                          }
+                        }
+                      });
+
+                      // Render grouped sections
+                      const groupEntries = Object.entries(groups);
+
+                      return (
+                        <div className="space-y-4">
+                          {groupEntries.map(([title, items]) => (
+                            <div key={title} className="bg-gray-50 p-4 rounded-md border border-orange-200">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="font-semibold text-orange-700">
+                                  <span className="mr-2">📖</span> {title}
+                                </div>
+                                <div className="text-sm text-gray-500">{items.length} ingredient{items.length !== 1 ? 's' : ''}</div>
+                              </div>
+                              <div className="space-y-2 bg-white p-3 rounded-md">
+                                {items.map((item) => (
+                                  <div key={item.id} className="flex items-center justify-between p-2 rounded-md hover:bg-white">
+                                    <div className="flex items-center flex-1">
+                                      <button
+                                        onClick={() => handleToggleItem(item.id)}
+                                        className={`mr-3 ${item.isPurchased ? 'text-green-500' : 'text-gray-400'}`}
+                                      >
+                                        <FaCheck size={18} />
+                                      </button>
+                                      <div className={item.isPurchased ? 'line-through text-gray-400' : ''}>
+                                        <span className="font-medium">{item.ingredientName}</span>
+                                        {item.quantity && (
+                                          <span className="text-gray-600 ml-2">{item.quantity} {item.unit}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <button onClick={() => handleDeleteItem(item.id)} className="text-red-500 hover:text-red-600 ml-4">
+                                      <FaTrash size={14} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+
+                          {ungrouped.length > 0 && (
+                            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="font-semibold text-gray-700">
+                                  <span className="mr-2">🛒</span> Other Ingredients
+                                </div>
+                                <div className="text-sm text-gray-500">{ungrouped.length} ingredient{ungrouped.length !== 1 ? 's' : ''}</div>
+                              </div>
+                              <div className="space-y-2 bg-white p-3 rounded-md">
+                                {ungrouped.map((item) => (
+                                  <div key={item.id} className="flex items-center justify-between p-2 rounded-md hover:bg-white">
+                                    <div className="flex items-center flex-1">
+                                      <button
+                                        onClick={() => handleToggleItem(item.id)}
+                                        className={`mr-3 ${item.isPurchased ? 'text-green-500' : 'text-gray-400'}`}
+                                      >
+                                        <FaCheck size={18} />
+                                      </button>
+                                      <div className={item.isPurchased ? 'line-through text-gray-400' : ''}>
+                                        <span className="font-medium">{item.ingredientName}</span>
+                                        {item.quantity && (
+                                          <span className="text-gray-600 ml-2">{item.quantity} {item.unit}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <button onClick={() => handleDeleteItem(item.id)} className="text-red-500 hover:text-red-600 ml-4">
+                                      <FaTrash size={14} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <button
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="text-red-500 hover:text-red-600 ml-4"
-                        >
-                          <FaTrash size={16} />
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })()}
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-8">No items in this list</p>

@@ -57,8 +57,43 @@ const Home = () => {
   }, [filters, page]);
 
   useEffect(() => {
-    fetchRecipes();
+    // Only fetch the default/filtered recipe list when there's no active search term.
+    if (searchTerm.trim() === '') {
+      fetchRecipes();
+    }
   }, [page, filters, fetchRecipes]);
+
+  // When the search field is cleared, return to the default listing
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      // Clear any active filters and reset to first page so we show ALL cuisines (default)
+      setFilters({});
+      setPage(0);
+      // fetchRecipes is already called by the effect that watches `page` and `filters`
+    }
+  }, [searchTerm]);
+
+  // Debounced live search: when user types, wait 500ms of inactivity then search
+  useEffect(() => {
+    if (searchTerm.trim() === '') return; // nothing to search
+
+    const handler = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const response = await recipeApi.searchRecipes(searchTerm, 0, 12);
+        setRecipes(response.content || []);
+        setTotalPages(response.totalPages || 0);
+        setPage(0);
+      } catch (error) {
+        console.error('Live search failed:', error);
+        toast.error('Failed to search recipes');
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
   const handleSearch = async (e) => {
     e.preventDefault();

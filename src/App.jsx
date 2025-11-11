@@ -7,7 +7,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
 import ProtectedRoute from './components/common/ProtectedRoute';
-import ErrorBoundary from './components/common/ErrorBoundary';
 
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -23,14 +22,12 @@ import Favorites from './pages/Favorites';
 import MealPlans from './pages/MealPlans';
 import ShoppingLists from './pages/ShoppingLists';
 import Profile from './pages/Profile';
-import AIChatbot from './pages/AIChatbot';
 
 function App() {
   return (
-    <ErrorBoundary>
-      <Router>
-        <ThemeProvider>
-          <AuthProvider>
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
           <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             <Navbar />
             <main className="flex-grow">
@@ -42,6 +39,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
               <Route path="/recipes/:id" element={<RecipeDetails />} />
+              
               
               <Route
                 path="/create-recipe"
@@ -105,8 +103,6 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              
-              <Route path="/ai-chatbot" element={<AIChatbot />} />
             </Routes>
           </main>
           <Footer />
@@ -125,7 +121,6 @@ function App() {
       </AuthProvider>
     </ThemeProvider>
     </Router>
-    </ErrorBoundary>
   );
 }
 
